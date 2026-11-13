@@ -1,0 +1,22 @@
+groups:
+  - name: deployflow-alerts
+    rules:
+      - alert: DeployFlowApiDown
+        expr: up{job="deployflow-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DeployFlow API is unavailable"
+          description: "Prometheus has failed to scrape the API for more than one minute."
+      - alert: HighApiErrorRate
+        expr: |
+          sum(rate(deployflow_http_requests_total{status_code=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(deployflow_http_requests_total[5m])), 0.001) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DeployFlow API 5xx rate is above 5%"
+          description: "Investigate API logs and dependencies."
